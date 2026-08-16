@@ -1470,12 +1470,17 @@ function Franchise({ data, ui }) {
   );
 }
 
-function Collapse({ icon, title, children, T, defaultOpen }) {
-  const [open, setOpen] = useState(!!defaultOpen);
+// Uncontrolled by default; pass `open` + `onToggle` to drive it from outside
+// (the BYU rail needs to open a section when it jumps to it).
+function Collapse({ icon, title, children, T, defaultOpen = false, open: openProp = undefined, onToggle = null, note = null }) {
+  const [openLocal, setOpenLocal] = useState(!!defaultOpen);
+  const controlled = openProp !== undefined;
+  const open = controlled ? !!openProp : openLocal;
+  const toggle = () => { if (controlled) { if (onToggle) onToggle(); } else setOpenLocal(o => !o); };
   return (
     <div className="rounded-3xl mb-2 overflow-hidden" style={T.glass}>
-      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between px-4 py-3.5 font-black text-sm btn-lift" style={{ color: T.text, background: "transparent" }}>
-        <span>{icon} {title}</span><span className="opacity-55 text-base">{open ? "▾" : "▸"}</span>
+      <button onClick={toggle} aria-expanded={open} className="w-full flex items-center justify-between px-4 py-3.5 font-black text-sm btn-lift" style={{ color: T.text, background: "transparent" }}>
+        <span>{icon} {title}{note && <span className="opacity-50 font-bold ml-2">{note}</span>}</span><span className="opacity-55 text-base">{open ? "▾" : "▸"}</span>
       </button>
       {open && <div className="px-3 pb-3" style={{ animation: "fadein .3s ease" }}>{children}</div>}
     </div>
@@ -2637,7 +2642,20 @@ function BYUFootballHQ() {
     { id: "vault", icon: "🏛️", name: "History", el: <HistoryVault celebrate={celebrate} T={T} /> },
     { id: "cosmo", icon: "🐾", name: "Cosmo", el: <AskCosmo T={T} /> },
   ];
-  const jump = id => { const el = typeof document !== "undefined" && document.getElementById("sec-" + id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  // Sections stay collapsed until opened, so the page reads as a short index
+  // and the heavy panels (two 10k-run simulations) only compute on demand.
+  const [openSecs, setOpenSecs] = useStorage("byu26_open_secs", { countdown: true });
+  const isOpen = id => !!(openSecs || {})[id];
+  const toggleSec = id => setOpenSecs(s => ({ ...(s || {}), [id]: !(s || {})[id] }));
+  const setAll = val => setOpenSecs(Object.fromEntries(SECTION_IDS.map(id => [id, val])));
+  const openCount = SECTION_IDS.filter(isOpen).length;
+  // Jumping from the rail opens the section too — scrolling to something
+  // still folded shut would be a dead end.
+  const jump = id => {
+    setOpenSecs(s => ({ ...(s || {}), [id]: true }));
+    const el = typeof document !== "undefined" && document.getElementById("sec-" + id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   // Highlight whichever section is currently in view. Degrades to a static
   // highlight where IntersectionObserver isn't available.
   useEffect(() => {
@@ -2707,13 +2725,17 @@ function BYUFootballHQ() {
             {sections.map(t => <button key={t.id} onClick={() => jump(t.id)} title={"Jump to " + t.name} className="tab-btn px-0 sm:px-3 py-2 rounded-xl text-sm sm:text-xs font-black text-center sm:text-left" style={activeSec === t.id ? { background: "linear-gradient(135deg,#3a63ff,#1a2fb0)", color: "#fff", boxShadow: "0 6px 18px rgba(26,47,176,0.5)" } : { background: theme === "day" ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.6)", color: "#17225e", border: "1px solid rgba(42,79,224,0.35)" }}><span className="sm:mr-1.5">{t.icon}</span><span className="hidden sm:inline">{t.name}</span></button>)}
           </div>
           <div className="flex-1 min-w-0">
-            {sections.map((s, i) => (
+            <div className="flex items-center justify-between mb-2 px-1">
+              <div className="text-xs font-black tracking-[0.2em] opacity-60" style={{ color: T.text }}>{openCount} OF {SECTION_IDS.length} OPEN</div>
+              <button onClick={() => setAll(openCount < SECTION_IDS.length)} className="btn-lift text-xs font-black px-3 py-1.5 rounded-full" style={{ background: theme === "day" ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.6)", color: "#17225e", border: "1px solid rgba(42,79,224,0.35)" }}>
+                {openCount < SECTION_IDS.length ? "Expand all" : "Collapse all"}
+              </button>
+            </div>
+            {sections.map(s => (
               <section key={s.id} id={"sec-" + s.id} style={{ scrollMarginTop: 64 }}>
-                <div className="flex items-center gap-2 pt-5 pb-1" style={{ borderTop: i === 0 ? "none" : "1px solid rgba(42,79,224,0.22)", marginTop: i === 0 ? 0 : 8 }}>
-                  <span className="text-base">{s.icon}</span>
-                  <span className="text-xs font-black tracking-[0.25em]" style={{ color: T.leaderLine }}>{s.name.toUpperCase()}</span>
-                </div>
-                {s.el}
+                <Collapse icon={s.icon} title={s.name} T={T} open={isOpen(s.id)} onToggle={() => toggleSec(s.id)}>
+                  {s.el}
+                </Collapse>
               </section>
             ))}
           </div>
