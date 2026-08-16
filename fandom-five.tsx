@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle, createContext, useContext } from "react";
 
+// Where the Messages API lives. A host that lets the app call Anthropic
+// directly leaves __API_URL__ unset; a deployed build points it at our own
+// serverless proxy so the API key never ships to the browser.
+const apiUrl = () => (typeof window !== "undefined" && window.__API_URL__) || "https://api.anthropic.com/v1/messages";
+
 const GAMES = [
   { id: "g1", opp: "Utah Tech", home: true, conf: false, date: "2026-09-05T18:00:00-06:00", tv: "ESPN+", tba: false, prob: 97, story: "Season opener under the lights in Provo against an in-state FCS foe. A tune-up to start the campaign on the right foot.", hype: 2, h2h: "1–0", h2hNote: "Lone meeting — BYU rolled 52–26 in 2022." },
   { id: "g2", opp: "Arizona", home: true, conf: true, date: "2026-09-12T13:30:00-06:00", tv: "FOX", tba: false, prob: 60, story: "Early Big 12 test on FOX. The Wildcats open conference play in Provo — first real measuring stick of the year.", hype: 3, h2h: "12–12–1", h2hNote: "Dead even all-time, dating back to 1936." },
@@ -308,7 +313,7 @@ function GameDay({ game, T, celebrate, demo }) {
     if (demo) return;
     setLoading(true); setErr(false);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for the score of today's BYU football game ${game.home ? "vs" : "at"} ${game.opp} (${fmtDate(game.date)}). Respond with ONLY a JSON object (no prose, no markdown): {"status":"pre" or "live" or "final","byu":number,"opp":number,"clock":string (e.g. "Q3 7:42", "Halftime", "Final"),"possession":"BYU" or "${game.opp}" or "","lastPlay":string describing the most recent notable play}. If the game hasn't kicked off yet, use status "pre" with 0-0 and put the kickoff time in "clock".` }] }),
       });
@@ -620,7 +625,7 @@ function Big12Race({ T }) {
   const load = async () => {
     setLoading(true); setErr(false);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for the current 2026 Big 12 Conference football standings. Respond with ONLY a JSON array (no prose, no markdown) of {"team": string, "conf": string, "overall": string} for all 16 teams in standings order. If the 2026 season hasn't started and there are no standings yet, return [].` }] }),
       });
@@ -850,7 +855,7 @@ function AskCosmo({ T }) {
   const send = async (text = null) => {
     const qy = (text ?? input).trim(); if (!qy || loading) return;
     const next = [...msgs, { role: "user", content: qy }]; setMsgs(next); setInput(""); setLoading(true);
-    try { const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 2000, system, messages: next.map(m => ({ role: m.role, content: m.content })) }) }); const data = await res.json(); const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim() || "Roar! My voice cracked — hit me again!"; setMsgs(m => [...m, { role: "assistant", content: txt }]); }
+    try { const res = await fetch(apiUrl(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 2000, system, messages: next.map(m => ({ role: m.role, content: m.content })) }) }); const data = await res.json(); const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim() || "Roar! My voice cracked — hit me again!"; setMsgs(m => [...m, { role: "assistant", content: txt }]); }
     catch (e) { setMsgs(m => [...m, { role: "assistant", content: "Fumble! I couldn't connect that time. Give it another shot in a sec. 🐾" }]); }
     setLoading(false);
   };
@@ -1165,7 +1170,7 @@ function TeamNews({ teamKey, teamName, ui }) {
   const load = async () => {
     setLoading(true); setErr(false);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for the 5 most recent news items about the ${teamName} from beat writers and major outlets. Respond with ONLY a JSON array (no prose, no markdown) of objects: {"headline": string, "source": string, "url": string}. Use real, current article URLs from your search results.` }] }),
       });
@@ -1309,7 +1314,7 @@ function LivePickem({ teamKey, teamName, shortName, ui }) {
   const load = async () => {
     setLoading(true); setErr(false);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for the ${teamName}'s next 6 upcoming scheduled games. Respond with ONLY a JSON array (no prose, no citations, no markdown) like [{"date":"Jul 20","opp":"Giants","ha":"vs"}], where "ha" is "vs" for home or "at" for away. If there are genuinely no upcoming games (offseason / schedule unreleased), return [].` }] }),
       });
@@ -1498,7 +1503,7 @@ function PlayerModal({ name, teamName, onClose, ui }) {
     if (cached) return;
     (async () => {
       try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch(apiUrl(), {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for current info on ${name} of the ${teamName}. Then output ONLY a JSON object as your entire final message (no prose before or after, no citations, no markdown fences): {"bio": "2-3 sentence current bio", "stats": [{"label": string, "value": string}] (4-6 key current/recent stats), "news": [{"headline": string, "source": string}] (2-3 recent news items)}.` }] }),
         });
@@ -1648,7 +1653,7 @@ function TeamAnalyst({ teamKey, team, ui }) {
     const qy = (text ?? input).trim(); if (!qy || loading) return;
     const next = [...msgs, { role: "user", content: qy }]; setMsgs(next); setInput(""); setLoading(true);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 1000, system, messages: next.map(m => ({ role: m.role, content: m.content })) }) });
+      const res = await fetch(apiUrl(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 1000, system, messages: next.map(m => ({ role: m.role, content: m.content })) }) });
       const data = await res.json();
       const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim() || "Static in the booth — run that by me again!";
       setMsgs(m => [...m, { role: "assistant", content: txt }]);
@@ -1811,7 +1816,7 @@ function ThisWeek({ glassH }) {
     setLoading(true); setErr(false);
     try {
       const teamList = HOME_CARDS.map(c => c.name).join(", ");
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for scheduled games in the NEXT 7 DAYS for these teams: ${teamList}. Today is ${new Date().toDateString()}. Respond with ONLY a JSON array (no prose, no markdown) of {"team": string, "day": "Tue Aug 11", "opp": string, "ha": "vs" or "at", "time": string} sorted chronologically, using the exact team names I gave. Omit teams with no games this week. If none of the teams play, return [].` }] }),
       });
@@ -1862,7 +1867,7 @@ function HomeNews({ glassH }) {
     setLoading(true); setErr(false);
     try {
       const teamList = HOME_CARDS.map(c => c.name).join(", ");
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for the most recent notable news story for EACH of these teams: ${teamList}. Respond with ONLY a JSON array (no prose, no markdown) of up to 9 items: {"team": string using the exact team names I gave, "headline": string, "source": string, "url": string} — at least one item per team when news exists, newest first. Use real, current article URLs from your search results.` }] }),
       });
@@ -1968,7 +1973,7 @@ function HomeHub({ setActive }) {
     setLoading(true);
     try {
       const teamList = HOME_CARDS.map(c => c.name).join(", ");
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `For each of these teams: ${teamList}. If the team has a game IN PROGRESS right now, give the current score plus the clock/quarter/period/inning. Otherwise, if their season is active, their most recent final score; otherwise their next scheduled game or the word "offseason". Respond with ONLY a JSON array (no prose, no markdown) of {"team": string, "line": string, "live": boolean} using the exact team names I gave — "live" is true ONLY for a game in progress right now.` }] }),
       });
@@ -2101,7 +2106,7 @@ function PollBoard({ kind, ui }) {
   const load = async () => {
     setLoading(true); setErr(false);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for ${cfg.ask}. Respond with ONLY a JSON array (no prose, no markdown) of {"rk": number, "team": string, "rec": string} for all 25 teams in order.` }] }),
       });
@@ -2242,7 +2247,7 @@ function CFBScoreboard({ ui }) {
   const load = async () => {
     setLoading(true); setErr(false);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `Search the web for the most recent week of 2026 college football final scores involving AP Top 25 teams. Respond with ONLY a JSON array (no prose, no markdown), up to 14 items: {"matchup": string like "#3 Texas at #1 Ohio State", "score": string like "Ohio State 31, Texas 24", "note": string — "UPSET" if a lower-ranked or unranked team won, otherwise "" }. If the season hasn't started and there are no results yet, return [].` }] }),
       });
