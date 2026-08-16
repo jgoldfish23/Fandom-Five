@@ -1358,6 +1358,124 @@ function LivePickem({ teamKey, teamName, shortName, ui }) {
   );
 }
 
+const TEAM_HONORS = {
+  byubball: {
+    trophies: [{ yr: "1951", label: "NIT Champs" }, { yr: "1966", label: "NIT Champs" }],
+    retired: ["22 Ainge", "32 Fredette", "11 Cosic"],
+    awards: [["AJ Dybantsa", "First-Team All-American '26 · Big 12 tourney record 93 pts"], ["Danny Ainge", "Wooden Award '81"], ["Jimmer Fredette", "National Player of the Year '11"]],
+  },
+  jazz: {
+    trophies: [{ yr: "1997", label: "West Champs" }, { yr: "1998", label: "West Champs" }],
+    retired: ["12 Stockton", "32 Malone", "7 Maravich", "53 Eaton", "1223 Sloan"],
+    awards: [["Karl Malone", "2× NBA MVP ('97, '99)"], ["John Stockton", "All-time assists & steals leader"], ["Lauri Markkanen", "Most Improved Player '23 · All-Star"]],
+  },
+  mammoth: {
+    trophies: [],
+    retired: [],
+    awards: [["Clayton Keller", "NHL All-Star · franchise's first captain"], ["Dylan Guenther", "First 40-goal season ('25-26)"], ["Mikhail Sergachev", "2× Stanley Cup champion (TB)"]],
+  },
+  eagles: {
+    trophies: [{ yr: "1948", label: "NFL Champs" }, { yr: "1949", label: "NFL Champs" }, { yr: "1960", label: "NFL Champs" }, { yr: "2018", label: "Super Bowl LII" }, { yr: "2025", label: "Super Bowl LIX" }],
+    retired: ["20 Dawkins", "60 Bednarik", "92 White", "15 Van Buren", "99 J. Brown"],
+    awards: [["Jalen Hurts", "Super Bowl LIX MVP"], ["Saquon Barkley", "NFL Off. Player of the Year '24 · 2,000-yd season"], ["Cooper DeJean", "First-Team All-Pro '25"]],
+  },
+  dodgers: {
+    trophies: [{ yr: "1955", label: "World Series" }, { yr: "1959", label: "World Series" }, { yr: "1963", label: "World Series" }, { yr: "1965", label: "World Series" }, { yr: "1981", label: "World Series" }, { yr: "1988", label: "World Series" }, { yr: "2020", label: "World Series" }, { yr: "2024", label: "World Series" }, { yr: "2025", label: "World Series" }],
+    retired: ["42 Robinson", "32 Koufax", "24 Alston", "2 Lasorda", "34 Valenzuela"],
+    awards: [["Shohei Ohtani", "3× MVP ('21, '23, '24)"], ["Yoshinobu Yamamoto", "World Series MVP '25"], ["Freddie Freeman", "World Series MVP '24 · NL MVP '20"], ["Mookie Betts", "AL MVP '18"]],
+  },
+};
+
+const FRANCHISE = {
+  byufootball: { founded: "1922", legends: ["Ty Detmer (1990 Heisman)", "Steve Young", "Jim McMahon", "LaVell Edwards (HC '72–'00)"], timeline: [{ yr: "1984", ev: "National champions at 13–0" }, { yr: "1990", ev: "Ty Detmer wins the Heisman" }, { yr: "1996", ev: "Cotton Bowl win, 14–1 season" }, { yr: "2023", ev: "Joins the Big 12" }, { yr: "2025", ev: "12–2, best recruiting class ever" }] },
+  byubball: { founded: "1902", legends: ["Danny Ainge ('81 Nat'l POY)", "Jimmer Fredette ('11 POY)", "Kresimir Cosic", "Michael Smith"], timeline: [{ yr: "1981", ev: "Danny Ainge wins the Wooden Award" }, { yr: "2011", ev: "Jimmer-mania; Fredette national POY" }, { yr: "2023", ev: "Joins the Big 12" }, { yr: "2026", ev: "Jimmer's No. 32 retired; Dybantsa era" }] },
+  jazz: { founded: "1974 · Utah since '79", legends: ["John Stockton", "Karl Malone", "Jerry Sloan (HC)", "Pete Maravich"], timeline: [{ yr: "1979", ev: "Franchise moves to Salt Lake City" }, { yr: "1997", ev: "First NBA Finals vs the Bulls" }, { yr: "1998", ev: "Second straight Finals run" }, { yr: "2025", ev: "New Mountain Purple identity" }] },
+  mammoth: { founded: "2024 (Salt Lake City)", legends: ["Clayton Keller (1st captain)", "Dylan Guenther", "Logan Cooley"], timeline: [{ yr: "2024", ev: "NHL arrives in Utah (as Utah HC)" }, { yr: "2025", ev: "Rebrand to the Utah Mammoth" }, { yr: "2026", ev: "First-ever playoff berth" }] },
+  eagles: { founded: "1933", legends: ["Reggie White", "Brian Dawkins", "Chuck Bednarik", "Steve Van Buren"], timeline: [{ yr: "1960", ev: "NFL champions (Bednarik era)" }, { yr: "2018", ev: "Super Bowl LII win over the Patriots" }, { yr: "2025", ev: "Super Bowl LIX champs (Hurts)" }, { yr: "2026", ev: "Wild Card exit as defending champs" }] },
+  dodgers: { founded: "1883 · LA since '58", legends: ["Jackie Robinson", "Sandy Koufax", "Vin Scully (voice)", "Clayton Kershaw"], timeline: [{ yr: "1947", ev: "Jackie Robinson breaks the color barrier" }, { yr: "1988", ev: "Gibson's walk-off HR, WS title" }, { yr: "2020", ev: "World Series title" }, { yr: "2024", ev: "World Series champs" }, { yr: "2025", ev: "Back-to-back champs" }] },
+};
+
+function MiniJersey({ num, name, color }) {
+  return (
+    <div className="text-center" style={{ width: 64 }}>
+      <svg viewBox="0 0 100 92" style={{ width: 64, display: "block", margin: "0 auto", filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.35))" }}>
+        <path d="M32 6 L44 2 Q50 12 56 2 L68 6 L94 22 L84 42 L72 36 L72 88 L28 88 L28 36 L16 42 L6 22 Z" fill={color + "2e"} stroke={color} strokeWidth="3" strokeLinejoin="round" />
+        <text x="50" y="62" textAnchor="middle" fontSize={String(num).length > 2 ? 20 : 30} fontWeight="900" fill={color}>{num}</text>
+      </svg>
+      <div className="font-bold opacity-80 mt-0.5" style={{ fontSize: 9 }}>{name}</div>
+    </div>
+  );
+}
+
+function HonorsWall({ teamKey, ui }) {
+  const H = TEAM_HONORS[teamKey];
+  if (!H) return null;
+  return (
+    <div style={{ color: ui.text }}>
+      <div className="text-xs font-black tracking-[0.2em] mb-2 mt-4" style={{ color: ui.accentColor }}>🏆 HONORS WALL</div>
+      <div className="rounded-2xl p-3 mb-2" style={ui.glass}>
+        <div className="text-xs font-black opacity-55 mb-1.5">CHAMPIONSHIPS</div>
+        {H.trophies.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {H.trophies.map((t, i) => (
+              <div key={i} className="rounded-xl px-2.5 py-1.5 text-center" style={{ background: "rgba(255,215,90,0.1)", border: "1px solid rgba(255,215,90,0.4)" }}>
+                <div className="text-lg leading-none">🏆</div>
+                <div className="text-xs font-black mt-0.5">{t.yr}</div>
+                <div className="opacity-65" style={{ fontSize: 9 }}>{t.label}</div>
+              </div>
+            ))}
+          </div>
+        ) : <div className="text-xs opacity-65">The case is empty — for now. This franchise's story is just starting. 🦣</div>}
+      </div>
+      <div className="rounded-2xl p-3 mb-2" style={ui.glass}>
+        <div className="text-xs font-black opacity-55 mb-2">RETIRED JERSEYS</div>
+        {H.retired.length ? (
+          <div className="flex flex-wrap gap-3">
+            {H.retired.map(r => { const sp = String(r).split(" "); return <MiniJersey key={r} num={sp[0]} name={sp.slice(1).join(" ")} color={ui.accentColor} />; })}
+          </div>
+        ) : <div className="text-xs opacity-65">No numbers in the rafters yet.</div>}
+      </div>
+      <div className="rounded-2xl p-3" style={ui.glass}>
+        <div className="text-xs font-black opacity-55 mb-1.5">🥇 INDIVIDUAL HARDWARE</div>
+        <div className="flex flex-col gap-1.5">
+          {H.awards.map(([nm, aw]) => (
+            <div key={nm} className="flex items-start gap-2 text-sm">
+              <span className="shrink-0">🥇</span>
+              <span><span className="font-black">{nm}</span> <span className="opacity-80">— {aw}</span></span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Franchise({ data, ui }) {
+  if (!data) return null;
+  return (
+    <div style={{ color: ui.text }}>
+      <div className="text-xs font-black tracking-[0.2em] mb-2 mt-4" style={{ color: ui.accentColor }}>🏛️ FRANCHISE HISTORY <span className="opacity-70">· founded {data.founded}</span></div>
+      <div className="rounded-2xl p-3 mb-2" style={ui.glass}><div className="text-xs font-black opacity-55 mb-1">LEGENDS</div><div className="text-sm">{data.legends.join(" · ")}</div></div>
+      <div className="rounded-2xl p-3" style={ui.glass}>
+        <div className="text-xs font-black opacity-55 mb-1.5">TIMELINE</div>
+        <div className="flex flex-col gap-1.5">{data.timeline.map((t, i) => (<div key={i} className="flex gap-2 text-sm"><span className="font-black shrink-0" style={{ color: ui.accentColor, width: 42 }}>{t.yr}</span><span className="opacity-85">{t.ev}</span></div>))}</div>
+      </div>
+    </div>
+  );
+}
+
+function Collapse({ icon, title, children, T, defaultOpen }) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <div className="rounded-3xl mb-2 overflow-hidden" style={T.glass}>
+      <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between px-4 py-3.5 font-black text-sm btn-lift" style={{ color: T.text, background: "transparent" }}>
+        <span>{icon} {title}</span><span className="opacity-55 text-base">{open ? "▾" : "▸"}</span>
+      </button>
+      {open && <div className="px-3 pb-3" style={{ animation: "fadein .3s ease" }}>{children}</div>}
+    </div>
+  );
+}
+
 function TeamPage({ team: p }) {
   const glass = { background: "linear-gradient(155deg, rgba(255,255,255,0.13), rgba(0,0,0,0.34))", backdropFilter: "blur(13px)", WebkitBackdropFilter: "blur(13px)", border: "1px solid rgba(255,255,255,0.16)", boxShadow: "0 12px 34px rgba(0,0,0,0.4)" };
   const isWhite = p.accent === "#ffffff";
@@ -1440,6 +1558,8 @@ function TeamPage({ team: p }) {
           ))}
         </div>
       </>)}
+      <HonorsWall teamKey={p.key} ui={{ glass, accentColor: valColor, text: "#fff" }} />
+      <Franchise data={FRANCHISE[p.key]} ui={{ glass, accentColor: valColor, text: "#fff" }} />
       <SeasonPredictor teamKey={p.key} teamName={p.name} ui={{ glass, accentBg, accentColor: valColor, text: "#fff", idleBtn: "rgba(255,255,255,0.12)", idleBorder: "1px solid rgba(255,255,255,0.25)", input: { background: "rgba(255,255,255,0.14)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" } }} />
       <LivePickem teamKey={p.key} teamName={p.name} shortName={p.key === "byubball" ? "BYU" : p.name.split(" ").pop()} ui={{ glass, accentBg, accentColor: valColor, text: "#fff", idleBtn: "rgba(255,255,255,0.12)", idleBorder: "1px solid rgba(255,255,255,0.25)" }} />
       <TeamNews teamKey={p.key} teamName={p.name} ui={{ glass, accentBg, accentColor: valColor, text: "#fff", idleBtn: "rgba(255,255,255,0.12)", idleBorder: "1px solid rgba(255,255,255,0.25)" }} />
@@ -2191,6 +2311,7 @@ export default function FandomFive() {
         ::-webkit-scrollbar{width:8px;height:8px}
         ::-webkit-scrollbar-thumb{background:rgba(128,128,160,.35);border-radius:8px}
         @keyframes teamin{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+        @keyframes fadein{from{opacity:0}to{opacity:1}}
       `}</style>
       {teamBg && <div style={{ position: "fixed", inset: 0, zIndex: 0, background: teamBg }} />}
       {teamBg && <div style={{ position: "fixed", top: "24%", left: "-12%", width: 400, height: 400, background: `radial-gradient(circle, ${cur.accent}55, transparent 70%)`, filter: "blur(55px)", zIndex: 0, pointerEvents: "none" }} />}
