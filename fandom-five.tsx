@@ -1541,6 +1541,125 @@ function PlayerModal({ name, teamName, onClose, ui }) {
   );
 }
 
+const SCHEDULES = {
+  mammoth: { title: "2026-27 OPENING SLATE", note: "Season opens Oct 1 · dates from the published NHL schedule", games: [
+    { date: "Thu Oct 1", opp: "Blackhawks", ha: "vs", time: "7:00 PM MT", tag: "Opener" },
+    { date: "Sat Oct 3", opp: "Blue Jackets", ha: "at", time: "5:00 PM MT" },
+    { date: "Sun Oct 4", opp: "Rangers", ha: "at", time: "4:00 PM MT" },
+    { date: "Tue Oct 6", opp: "Devils", ha: "at", time: "5:00 PM MT" },
+    { date: "Thu Oct 8", opp: "Bruins", ha: "at", time: "5:00 PM MT" },
+    { date: "Sat Oct 10", opp: "Sabres", ha: "at", time: "5:00 PM MT" },
+    { date: "Tue Oct 13", opp: "Maple Leafs", ha: "vs", time: "7:00 PM MT" },
+    { date: "Thu Oct 15", opp: "Oilers", ha: "at", time: "7:00 PM MT" },
+    { date: "Sat Oct 17", opp: "Oilers", ha: "vs", time: "8:00 PM MT" },
+    { date: "Mon Oct 19", opp: "Penguins", ha: "vs", time: "7:00 PM MT" },
+    { date: "Thu Oct 22", opp: "Kraken", ha: "at", time: "7:40 PM MT" },
+    { date: "Sat Oct 24", opp: "Lightning", ha: "vs", time: "7:00 PM MT" },
+    { date: "Tue Oct 27", opp: "Wild", ha: "vs", time: "7:00 PM MT" },
+    { date: "Thu Oct 29", opp: "Penguins", ha: "at", time: "5:00 PM MT" },
+    { date: "Sun Nov 1", opp: "Flyers", ha: "at", time: "2:00 PM MT" },
+  ] },
+  eagles: { title: "2026 SCHEDULE", note: "Preseason opens Aug 15 · Week 1 is Sep 13 · dates from the published NFL schedule", games: [
+    { date: "Sat Aug 15", opp: "Ravens", ha: "at", time: "5:00 PM MT", tag: "Preseason" },
+    { date: "Sat Aug 22", opp: "Patriots", ha: "at", time: "5:00 PM MT", tag: "Preseason" },
+    { date: "Fri Aug 28", opp: "Bengals", ha: "vs", time: "6:00 PM MT", tag: "Preseason" },
+    { date: "Sun Sep 13", opp: "Commanders", ha: "vs", time: "2:25 PM MT", tag: "Week 1" },
+    { date: "Sun Sep 20", opp: "Titans", ha: "at", time: "11:00 AM MT" },
+    { date: "Mon Sep 28", opp: "Bears", ha: "at", time: "6:15 PM MT", tag: "MNF" },
+    { date: "Sun Oct 4", opp: "Rams", ha: "vs", time: "11:00 AM MT" },
+    { date: "Sun Oct 11", opp: "Jaguars", ha: "at", time: "7:30 AM MT", tag: "London" },
+    { date: "Sun Oct 18", opp: "Panthers", ha: "vs", time: "11:00 AM MT" },
+    { date: "Mon Oct 26", opp: "Cowboys", ha: "vs", time: "6:15 PM MT", tag: "MNF" },
+    { date: "Sun Nov 1", opp: "Commanders", ha: "at", time: "6:20 PM MT", tag: "SNF" },
+    { date: "Sun Nov 8", opp: "Giants", ha: "vs", time: "11:00 AM MT" },
+    { date: "Sun Nov 22", opp: "Steelers", ha: "vs", time: "2:25 PM MT" },
+    { date: "Thu Nov 26", opp: "Cowboys", ha: "at", time: "2:30 PM MT", tag: "Thanksgiving" },
+    { date: "Sun Dec 6", opp: "Cardinals", ha: "at", time: "2:05 PM MT" },
+  ] },
+  jazz: { title: "2026-27 OPENING SLATE", note: "Season opens Oct 21 · home opener Oct 23 · dates from the published NBA schedule", games: [
+    { date: "Wed Oct 21", opp: "Grizzlies", ha: "at", time: "6:00 PM MT" },
+    { date: "Fri Oct 23", opp: "Pelicans", ha: "vs", time: "7:30 PM MT", tag: "Home opener" },
+    { date: "Sun Oct 25", opp: "Lakers", ha: "vs", time: "3:00 PM MT" },
+    { date: "Mon Oct 26", opp: "Grizzlies", ha: "vs", time: "7:00 PM MT" },
+    { date: "Wed Oct 28", opp: "Spurs", ha: "vs", time: "7:00 PM MT" },
+    { date: "Sat Oct 31", opp: "Trail Blazers", ha: "vs", time: "1:00 PM MT" },
+    { date: "Mon Nov 2", opp: "Spurs", ha: "at", time: "6:30 PM MT" },
+    { date: "Wed Nov 4", opp: "Pelicans", ha: "at", time: "6:00 PM MT" },
+    { date: "Fri Nov 6", opp: "Mavericks", ha: "at", time: "6:00 PM MT" },
+    { date: "Sun Nov 8", opp: "Timberwolves", ha: "at", time: "5:00 PM MT" },
+    { date: "Tue Nov 10", opp: "Heat", ha: "vs", time: "7:00 PM MT" },
+    { date: "Wed Nov 11", opp: "Magic", ha: "vs", time: "7:00 PM MT" },
+    { date: "Fri Nov 13", opp: "Rockets", ha: "at", time: "6:30 PM MT" },
+    { date: "Sun Nov 15", opp: "Spurs", ha: "vs", time: "3:00 PM MT" },
+    { date: "Tue Nov 17", opp: "Clippers", ha: "at", time: "9:00 PM MT" },
+  ] },
+};
+
+const ANALYSTS = {
+  byubball: { name: "Cosmo (Hoops Mode)", emoji: "🏀", vibe: "BYU's mascot in basketball mode — electric, loyal, hyped on the Kevin Young era and the reload after Dybantsa. Family-friendly, punchy, drops 'Rise and Shout!'", chips: ["Can Wright III carry us?", "Do we finally make a Final Four?", "Hype the Big 12 race"] },
+  jazz: { name: "Jazz Bear", emoji: "🐻", vibe: "The Jazz's legendary mischievous mascot — playful, prank-loving, but sneaky-smart about basketball. Honest about the rebuild while hyped on the young core and the new Mountain Purple era.", chips: ["Is Peterson the future?", "When are we good again?", "Grade the rebuild"] },
+  mammoth: { name: "Tusky", emoji: "🦣", vibe: "The Mammoth's mascot — big, warm, stomping with excitement about hockey in Utah. Proud of the first playoff run, hyped on Keller, Cooley, and Guenther.", chips: ["Can we win a playoff round?", "Is Cooley a superstar?", "Hype opening night"] },
+  eagles: { name: "Swoop", emoji: "🦅", vibe: "The Eagles' mascot — gritty Philly energy, zero patience for doubters, bleeds midnight green. Confident about the Hurts-Barkley core, honest that the WR room changed after the A.J. Brown trade.", chips: ["Are we winning the East again?", "How's life after A.J.?", "Hype the Dallas games"] },
+  dodgers: { name: "Blue", emoji: "🔵", vibe: "A smooth LA broadcast-booth analyst voice — classy, poetic about baseball, casually confident the way back-to-back champs get to be. Loves Ohtani theater and October baseball.", chips: ["Can we three-peat?", "Is this the best lineup ever?", "Who's our October X-factor?"] },
+};
+
+function TeamAnalyst({ teamKey, team, ui }) {
+  const A = ANALYSTS[teamKey];
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
+  useEffect(() => { scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight); }, [msgs, loading]);
+  if (!A) return null;
+  const sched = (SCHEDULES[teamKey]?.games || []).map(g => `${g.date} ${g.ha} ${g.opp}`).join("; ");
+  const system = `You are ${A.name}, AI analyst for the ${team.name}. Personality: ${A.vibe} Keep replies short (2-4 sentences), high-energy, family-friendly and clean (no profanity). Facts you know — record: ${team.record} (${team.recordLabel}); status: ${team.status}; key players: ${team.players.map(x => `${x.name} (${x.pos}, ${x.line})`).join("; ")}; storylines: ${team.notes.join(" | ")}.${sched ? ` Upcoming schedule: ${sched}.` : ""} Predictions are just for fun.`;
+  const send = async (text = null) => {
+    const qy = (text ?? input).trim(); if (!qy || loading) return;
+    const next = [...msgs, { role: "user", content: qy }]; setMsgs(next); setInput(""); setLoading(true);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 1000, system, messages: next.map(m => ({ role: m.role, content: m.content })) }) });
+      const data = await res.json();
+      const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim() || "Static in the booth — run that by me again!";
+      setMsgs(m => [...m, { role: "assistant", content: txt }]);
+    } catch (e) { setMsgs(m => [...m, { role: "assistant", content: "Lost the feed for a second — try me again. " + A.emoji }]); }
+    setLoading(false);
+  };
+  return (
+    <div style={{ color: ui.text }}>
+      <div className="text-xs font-black tracking-[0.2em] mb-2 mt-4" style={{ color: ui.accentColor }}>{A.emoji} TEAM ANALYST</div>
+      {!open ? (
+        <button onClick={() => setOpen(true)} className="btn-lift w-full rounded-3xl p-4 text-left" style={ui.glass}>
+          <div className="font-black">{A.emoji} Talk to {A.name}</div>
+          <div className="text-xs opacity-70 mt-0.5">Your live AI voice for the {team.name} — takes, breakdowns, hype.</div>
+        </button>
+      ) : (
+        <div className="rounded-3xl p-3 flex flex-col" style={{ ...ui.glass, height: 420 }}>
+          <div className="flex justify-between items-center mb-2">
+            <div className="font-black text-sm">{A.emoji} {A.name}</div>
+            <button onClick={() => setOpen(false)} className="btn-lift text-xs font-black px-2.5 py-1 rounded-full" style={{ background: ui.idleBtn, color: ui.text, border: ui.idleBorder }}>Close</button>
+          </div>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1">
+            {msgs.length === 0 && (
+              <div className="flex flex-wrap gap-1.5">{A.chips.map(c => <button key={c} onClick={() => send(c)} className="btn-lift px-2.5 py-1.5 rounded-full text-xs font-bold" style={{ background: ui.idleBtn, color: ui.text, border: ui.idleBorder }}>{c}</button>)}</div>
+            )}
+            {msgs.map((m, i) => (
+              <div key={i} className={"flex " + (m.role === "user" ? "justify-end" : "justify-start")}>
+                <div className="max-w-[82%] rounded-2xl px-3 py-2 text-sm" style={m.role === "user" ? { ...ui.accentBg, fontWeight: 600 } : { background: "rgba(255,255,255,0.09)", border: "1px solid rgba(255,255,255,0.14)" }}>{m.role === "assistant" && <span className="mr-1">{A.emoji}</span>}{m.content}</div>
+              </div>
+            ))}
+            {loading && <div className="text-xs opacity-70 animate-pulse">{A.emoji} thinking…</div>}
+          </div>
+          <div className="flex gap-2 mt-2">
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder={`Ask ${A.name}…`} className="flex-1 px-3 py-2.5 rounded-full text-sm" style={{ background: "rgba(255,255,255,0.1)", color: ui.text, border: ui.idleBorder, outline: "none" }} />
+            <button onClick={() => send()} disabled={loading} className="btn-lift px-4 py-2.5 rounded-full font-black text-sm" style={{ ...ui.accentBg, opacity: loading ? 0.6 : 1 }}>Send</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TeamPage({ team: p }) {
   const [playerOpen, setPlayerOpen] = useState(null);
   const glass = { background: "linear-gradient(155deg, rgba(255,255,255,0.13), rgba(0,0,0,0.34))", backdropFilter: "blur(13px)", WebkitBackdropFilter: "blur(13px)", border: "1px solid rgba(255,255,255,0.16)", boxShadow: "0 12px 34px rgba(0,0,0,0.4)" };
@@ -1629,6 +1748,7 @@ function TeamPage({ team: p }) {
       <Franchise data={FRANCHISE[p.key]} ui={{ glass, accentColor: valColor, text: "#fff" }} />
       <SeasonPredictor teamKey={p.key} teamName={p.name} ui={{ glass, accentBg, accentColor: valColor, text: "#fff", idleBtn: "rgba(255,255,255,0.12)", idleBorder: "1px solid rgba(255,255,255,0.25)", input: { background: "rgba(255,255,255,0.14)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" } }} />
       <LivePickem teamKey={p.key} teamName={p.name} shortName={p.key === "byubball" ? "BYU" : p.name.split(" ").pop()} ui={{ glass, accentBg, accentColor: valColor, text: "#fff", idleBtn: "rgba(255,255,255,0.12)", idleBorder: "1px solid rgba(255,255,255,0.25)" }} />
+      <TeamAnalyst teamKey={p.key} team={p} ui={{ glass, accentBg, accentColor: valColor, text: "#fff", idleBtn: "rgba(255,255,255,0.12)", idleBorder: "1px solid rgba(255,255,255,0.25)" }} />
       <TeamNews teamKey={p.key} teamName={p.name} ui={{ glass, accentBg, accentColor: valColor, text: "#fff", idleBtn: "rgba(255,255,255,0.12)", idleBorder: "1px solid rgba(255,255,255,0.25)" }} />
       <div className="text-xs opacity-45 mt-3 text-center">Rosters/depth charts current as of July 2026 — offseason moves may shift them. Starters listed first.</div>
     </div>
