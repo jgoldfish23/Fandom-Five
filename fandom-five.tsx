@@ -1542,7 +1542,7 @@ function HomeNews({ glassH }) {
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
-        <div><div className="text-xs font-black tracking-[0.2em] opacity-60">📰 AROUND THE HQ</div>{stamp && <div className="text-xs opacity-45">Updated {stamp}</div>}</div>
+        <div><div className="text-xs font-black tracking-[0.2em] opacity-60">📰 AROUND THE FANDOM</div>{stamp && <div className="text-xs opacity-45">Updated {stamp}</div>}</div>
         <button onClick={load} disabled={loading} className="btn-lift rounded-full px-3 py-1.5 text-xs font-black" style={{ background: "#fff", color: ROYAL, opacity: loading ? 0.6 : 1 }}>{loading ? "Loading…" : "Refresh"}</button>
       </div>
       <div className="rounded-3xl p-3" style={glassH}>
@@ -1656,8 +1656,8 @@ function HomeHub({ setActive }) {
     <div style={{ color: "#fff" }}>
       <div className="text-center mb-5">
         <div className="text-xs font-black tracking-[0.4em]" style={{ color: "#8ea6ff" }}>YOUR</div>
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ background: "linear-gradient(120deg,#ffffff,#8ea6ff)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>SPORTS HQ</h1>
-        <div className="text-xs opacity-70">Six teams · one command center</div>
+        <h1 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ background: "linear-gradient(120deg,#ffffff,#8ea6ff)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>FANDOM FIVE</h1>
+        <div className="text-xs opacity-70">Five fandoms · one command center</div>
       </div>
 
       <div className="flex items-center justify-between mb-2">
@@ -2175,7 +2175,7 @@ function CFBHub({ setActive }) {
   );
 }
 
-export default function SportsHQ() {
+export default function FandomFive() {
   const [active, setActive] = useStorage("sportshq_team", "home");
   const order = ["home", "cfb", "byufootball", "byubball", "jazz", "mammoth", "eagles", "dodgers"];
   const cur = TEAMS[active] || TEAMS.byufootball;
@@ -2197,7 +2197,7 @@ export default function SportsHQ() {
 
       <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 70, background: "rgba(6,10,22,0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.12)" }}>
         <div className="max-w-2xl mx-auto px-3 py-2 flex items-center gap-1.5 sm:gap-2 overflow-x-auto">
-          <span className="hidden sm:inline text-xs font-black tracking-widest shrink-0 mr-1" style={{ color: "#fff" }}>SPORTS HQ</span>
+          <span className="hidden sm:inline text-xs font-black tracking-widest shrink-0 mr-1" style={{ color: "#fff" }}>FANDOM FIVE</span>
           {order.map(k => { const home = k === "home"; const t = TEAMS[k]; const on = active === k; const em = home ? "🏠" : t.tab.split(" ")[0]; const lbl = home ? "Home" : t.tab.split(" ").slice(1).join(" "); return <button key={k} onClick={() => setActive(k)} title={home ? "Home" : t.name} className="btn-lift px-2.5 sm:px-3 py-1.5 rounded-full text-sm sm:text-xs font-black whitespace-nowrap shrink-0" style={on ? { background: "#fff", color: "#12193a" } : { background: "rgba(255,255,255,0.12)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}><span>{em}</span>{lbl && <span className="hidden sm:inline sm:ml-1">{lbl}</span>}</button>; })}
         </div>
       </div>
