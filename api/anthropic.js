@@ -8,6 +8,19 @@ const ALLOWED_MODELS = new Set(["claude-sonnet-5"]);
 const MAX_BODY_BYTES = 256 * 1024;
 
 export default async function handler(req, res) {
+  // TEMPORARY diagnostic — remove once the key is confirmed working.
+  // Reports which env var NAMES this function can see. Never returns a value.
+  if (req.method === "GET" && req.query && req.query.diag === "1") {
+    const names = Object.keys(process.env);
+    return res.status(200).json({
+      anthropicNames: names.filter(n => /ANTHROPIC/i.test(n)),
+      keyPresent: !!process.env.ANTHROPIC_API_KEY,
+      keyLength: (process.env.ANTHROPIC_API_KEY || "").length,
+      vercelEnv: process.env.VERCEL_ENV || null,
+      totalVars: names.length,
+    });
+  }
+
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Method not allowed" });
