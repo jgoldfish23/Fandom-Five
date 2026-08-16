@@ -19,9 +19,9 @@ byte-identical in both — and then the two diverged:
   victory alerts, a throwback-logo mode.
 
 Neither is a superset of the other. Mainline is the newer of the two
-(`as of Aug 2026` annotations vs `July 2026`; `claude-sonnet-5` vs the
-never-valid `claude-sonnet-4-6`), despite this file carrying a later filesystem
-mtime from OneDrive sync.
+(`as of Aug 2026` annotations vs `July 2026`; the newer-generation
+`claude-sonnet-5` vs `claude-sonnet-4-6`), despite this file carrying a later
+filesystem mtime from OneDrive sync.
 
 **Copied verbatim — do not edit.** md5 `f75816da9af1a03332ea6666af3caf03`.
 

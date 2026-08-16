@@ -1476,7 +1476,73 @@ function Collapse({ icon, title, children, T, defaultOpen }) {
   );
 }
 
+const PLAYER_CACHE = {};
+
+function PlayerModal({ name, teamName, onClose, ui }) {
+  const cached = PLAYER_CACHE[name];
+  const [prof, setProf] = useState(cached || null);
+  const [loading, setLoading] = useState(!cached);
+  const [err, setErr] = useState(false);
+  useEffect(() => {
+    if (cached) return;
+    (async () => {
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: `Search the web for current info on ${name} of the ${teamName}. Then output ONLY a JSON object as your entire final message (no prose before or after, no citations, no markdown fences): {"bio": "2-3 sentence current bio", "stats": [{"label": string, "value": string}] (4-6 key current/recent stats), "news": [{"headline": string, "source": string}] (2-3 recent news items)}.` }] }),
+        });
+        const data = await res.json();
+        const blocks = (data.content || []).filter(b => b.type === "text").map(b => b.text);
+        let p = null;
+        for (let i = blocks.length - 1; i >= 0 && !p; i--) {
+          const mm = blocks[i].match(/\{[\s\S]*\}/);
+          if (mm) { try { const cand = JSON.parse(mm[0]); if (cand && cand.bio) p = cand; } catch (e2) {} }
+        }
+        if (!p) {
+          const joined = blocks.join("\n"); const mj = joined.match(/\{[\s\S]*\}/);
+          if (mj) { try { const cand = JSON.parse(mj[0]); if (cand && cand.bio) p = cand; } catch (e3) {} }
+        }
+        if (p) { PLAYER_CACHE[name] = p; setProf(p); } else setErr(true);
+      } catch (e) { setErr(true); }
+      setLoading(false);
+    })();
+  }, [name]);
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(3,5,14,0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+      <div onClick={e => e.stopPropagation()} className="w-full max-w-lg rounded-t-3xl p-5 pb-8" style={{ background: "linear-gradient(165deg, #141b3f, #07091a)", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", maxHeight: "82vh", overflowY: "auto", animation: "teamin .3s ease" }}>
+        <div className="flex justify-between items-start mb-1">
+          <div><div className="text-xl font-black">{name}</div><div className="text-xs opacity-60">{teamName}</div></div>
+          <button onClick={onClose} className="btn-lift w-9 h-9 rounded-full font-black shrink-0" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff" }}>✕</button>
+        </div>
+        {loading && <div className="text-sm opacity-70 py-6 text-center animate-pulse">Pulling live profile…</div>}
+        {err && !loading && <div className="text-sm opacity-70 py-4">Couldn't load a profile right now — try again in a moment.</div>}
+        {prof && (<>
+          <div className="text-sm opacity-90 leading-relaxed mt-2 mb-3">{prof.bio}</div>
+          {prof.stats?.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {prof.stats.map((s, i) => (
+                <div key={i} className="rounded-2xl p-2.5" style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <div className="text-base font-black" style={{ color: ui?.accentColor || "#8ea6ff" }}>{s.value}</div>
+                  <div className="text-xs opacity-65">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          {prof.news?.length > 0 && (<>
+            <div className="text-xs font-black tracking-[0.2em] opacity-55 mb-1.5">LATEST</div>
+            <div className="flex flex-col gap-1.5">
+              {prof.news.map((n, i) => <div key={i} className="rounded-xl p-2.5 text-sm" style={{ background: "rgba(255,255,255,0.07)" }}><div className="font-bold">{n.headline}</div><div className="text-xs opacity-55">{n.source}</div></div>)}
+            </div>
+          </>)}
+          <div className="text-xs opacity-40 mt-3 text-center">Live-fetched profile — verify big claims against the source.</div>
+        </>)}
+      </div>
+    </div>
+  );
+}
+
 function TeamPage({ team: p }) {
+  const [playerOpen, setPlayerOpen] = useState(null);
   const glass = { background: "linear-gradient(155deg, rgba(255,255,255,0.13), rgba(0,0,0,0.34))", backdropFilter: "blur(13px)", WebkitBackdropFilter: "blur(13px)", border: "1px solid rgba(255,255,255,0.16)", boxShadow: "0 12px 34px rgba(0,0,0,0.4)" };
   const isWhite = p.accent === "#ffffff";
   const accentBg = { background: isWhite ? "linear-gradient(150deg,#ffffff,#eaf0ff)" : `linear-gradient(150deg, ${p.accent}, ${p.accent}cc)`, color: "#0c1226" };
@@ -1513,10 +1579,11 @@ function TeamPage({ team: p }) {
           ))}
         </div>
       </>)}
-      <div className="text-xs font-black tracking-[0.2em] opacity-55 mb-2">KEY PLAYERS</div>
+      <div className="text-xs font-black tracking-[0.2em] opacity-55 mb-2">KEY PLAYERS <span className="opacity-60 font-bold">· tap for live profile</span></div>
       <div className="flex flex-col gap-2 mb-4">
-        {p.players.map(pl => <div key={pl.name} className="rounded-2xl p-3 flex items-center gap-3 card-hover" style={glass}><div className="rounded-lg px-2 py-1 text-xs font-black shrink-0" style={accentBg}>{pl.pos}</div><div className="flex-1 min-w-0"><div className="font-black">{pl.name}</div><div className="text-xs opacity-75">{pl.line}</div></div></div>)}
+        {p.players.map(pl => <button key={pl.name} onClick={() => setPlayerOpen(pl.name)} className="rounded-2xl p-3 flex items-center gap-3 card-hover btn-lift text-left w-full" style={{ ...glass, color: "#fff" }}><div className="rounded-lg px-2 py-1 text-xs font-black shrink-0" style={accentBg}>{pl.pos}</div><div className="flex-1 min-w-0"><div className="font-black">{pl.name}</div><div className="text-xs opacity-75">{pl.line}</div></div><span className="text-xs opacity-45 shrink-0">→</span></button>)}
       </div>
+      {playerOpen && <PlayerModal name={playerOpen} teamName={p.name} onClose={() => setPlayerOpen(null)} ui={{ accentColor: valColor }} />}
       <div className="text-xs font-black tracking-[0.2em] opacity-55 mb-2">THE LATEST</div>
       <div className="flex flex-col gap-2">
         {p.notes.map((n, i) => <div key={i} className="rounded-xl p-3 text-sm flex gap-2" style={glass}><span style={{ color: valColor }}>▸</span><span className="opacity-90">{n}</span></div>)}

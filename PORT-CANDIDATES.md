@@ -13,7 +13,7 @@ The stray file is a **divergent July-era branch**, not an older backup and not a
 | Signal | Stray | Mainline |
 |---|---|---|
 | Dated annotations | `as of July 2026` only | `as of Aug 2026` **and** July |
-| Model ID in API calls | `claude-sonnet-4-6` | `claude-sonnet-5` |
+| Model ID in API calls | `claude-sonnet-4-6` (older gen) | `claude-sonnet-5` (newer gen) |
 | Logo strategy | `/logos/*.png` + ESPN CDN + SVG fallback | 7 embedded base64 in `LOGOS` |
 
 The `GAMES` array is byte-identical in both (same md5), confirming a shared ancestor. Mainline then grew the CFB Hub and the analytics suite; the stray grew team-page depth. **Neither is a superset.** 12 real components live only in the stray (13 counting the old `SportsHQ` export name, now `FandomFive`).
@@ -27,7 +27,7 @@ ui={{ glass, accentBg, accentColor: valColor, text: "#fff",
 
 `ConfettiLayer` (line 130), `playFanfare`, and `useStorage` are identical in both files. So most of these are genuinely paste-plus-one-line jobs, not rewrites.
 
-**One global gotcha:** every ported network component needs `claude-sonnet-4-6` → `claude-sonnet-5`. That model ID never existed; mainline is already on the current one.
+**One global gotcha:** every ported network component needs `claude-sonnet-4-6` → `claude-sonnet-5`. Both are real, currently-active models — Sonnet 4.6 is simply the older generation, and mainline has already moved to Sonnet 5. Bump on port so all API calls in the file stay on one model.
 
 ---
 
