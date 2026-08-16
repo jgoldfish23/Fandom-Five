@@ -143,11 +143,16 @@ function OvalY({ stroke = ROYAL, style }) {
   );
 }
 
+// Third return value tells callers when the stored value has actually been
+// read back. Writes are ignored before that point, so anything that must not
+// be lost (VictoryWatch's "already celebrated" record) has to wait for it.
+// Existing two-element destructuring is unaffected.
 function useStorage(key, initial) {
   const [val, setVal] = useState(initial); const loaded = useRef(false);
-  useEffect(() => { (async () => { try { const r = await window.storage.get(key); if (r && r.value) setVal(JSON.parse(r.value)); } catch (e) {} loaded.current = true; })(); }, [key]);
+  const [ready, setReady] = useState(false);
+  useEffect(() => { (async () => { try { const r = await window.storage.get(key); if (r && r.value) setVal(JSON.parse(r.value)); } catch (e) {} loaded.current = true; setReady(true); })(); }, [key]);
   useEffect(() => { if (!loaded.current) return; (async () => { try { await window.storage.set(key, JSON.stringify(val)); } catch (e) {} })(); }, [key, val]);
-  return [val, setVal];
+  return [val, setVal, ready];
 }
 
 const fmtDate = iso => new Date(iso).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
@@ -1964,6 +1969,92 @@ function TeamCompare({ glassH }) {
   );
 }
 
+const WIN_LINES = {
+  byufootball: "RISE AND SHOUT! 🏈", byubball: "RISE AND SHOUT! 🏀",
+  jazz: "TAKE NOTE — the young core delivered! 🎷", mammoth: "THE HERD STAMPEDES ON! 🦣",
+  eagles: "FLY EAGLES FLY! 🦅", dodgers: "THREE-PEAT WATCH ROLLS ON! ⚾",
+};
+
+// A blowout means something different in every sport — 17 is a rout in
+// football, but 4 goals in hockey and 6 runs in baseball are the equivalents.
+const BLOWOUT_MARGIN = { byufootball: 17, eagles: 17, byubball: 12, jazz: 12, dodgers: 6, mammoth: 4 };
+
+// Celebrates wins off the scoreboard's structured result fields rather than
+// reading its prose line, and reuses the scoreboard's fetch instead of making
+// its own. A result is celebrated once: its signature is remembered, so a
+// refresh showing the same final score stays quiet.
+function VictoryWatch({ scores }) {
+  const [seen, setSeen, seenReady] = useStorage("sportshq_celeb", {});
+  const [soundOn] = useStorage("byu26_sound", true);
+  const [celebs, setCelebs] = useState([]);
+  const confRef = useRef(null);
+  useEffect(() => {
+    // Wait for the stored record to load. Acting earlier would compare against
+    // an empty object, re-seed every visit, and never celebrate anything.
+    if (!seenReady) return;
+    if (!Array.isArray(scores) || !scores.length) return;
+    const prev = seen || {};
+    const next = { ...prev };
+    const fresh = [];
+    scores.forEach(x => {
+      // The scoreboard array is parsed from model output, so individual rows
+      // can be null or malformed. One bad row must not take the page down.
+      if (!x || typeof x !== "object") return;
+      const card = cardOf(String(x.team || ""));
+      if (!card || x.result !== "win") return;
+      const ts = Number(x.teamScore), os = Number(x.oppScore);
+      const sig = `${x.teamScore}-${x.oppScore}-${x.opponent || ""}`;
+      if (next[card.key] === sig) return;
+      next[card.key] = sig;
+      const margin = Number.isFinite(ts) && Number.isFinite(os) ? ts - os : null;
+      fresh.push({
+        key: card.key, name: card.name, line: x.line, hype: WIN_LINES[card.key],
+        margin, blowout: margin !== null && margin >= (BLOWOUT_MARGIN[card.key] || 17),
+      });
+    });
+    // First run on this device: remember what has already happened without
+    // celebrating it, so opening the app for the first time mid-season doesn't
+    // fire six times at once for results the user already knows about.
+    if (!prev.__seeded) { setSeen({ ...next, __seeded: true }); return; }
+    if (!fresh.length) return;
+    setSeen(next);
+    setCelebs(fresh);
+    confRef.current?.fire();
+    playFanfare("big", soundOn);
+    if (fresh.some(f => f.blowout)) {
+      setTimeout(() => confRef.current?.fire(), 650);
+      setTimeout(() => confRef.current?.fire(), 1300);
+    }
+    // seenReady matters: the first pass bails while storage is still loading,
+    // and this is what brings it back once the record is actually available.
+    // `seen` is deliberately not a dep — we write to it here, and re-running on
+    // our own write would loop.
+  }, [scores, seenReady]);
+  return (
+    <>
+      <ConfettiLayer ref={confRef} />
+      {celebs.length > 0 && (
+        <div className="rounded-3xl p-4 mb-4" style={{ background: "linear-gradient(150deg, rgba(255,215,90,0.2), rgba(6,10,26,0.88))", border: "1px solid rgba(255,215,90,0.55)", boxShadow: "0 0 34px rgba(255,215,90,0.3)", color: "#fff", animation: "teamin .4s ease" }}>
+          <div className="flex justify-between items-center mb-1.5">
+            <div className="text-xs font-black tracking-[0.25em]" style={{ color: "#ffd75a" }}>🎉 VICTORY ALERT</div>
+            <button onClick={() => setCelebs([])} aria-label="Dismiss" className="btn-lift w-7 h-7 rounded-full text-xs font-black" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", color: "#fff" }}>✕</button>
+          </div>
+          {celebs.map(c => (
+            <div key={c.key} className="mb-2 last:mb-0">
+              <div className="flex items-center gap-2">
+                <TeamMark teamKey={c.key} size={22} />
+                <div className="text-lg font-black">{c.name.toUpperCase()} WON!{c.blowout && <span className="ml-2 align-middle text-xs font-black px-2 py-0.5 rounded-full" style={{ background: "#ff5b4d", color: "#fff" }}>💥 STATEMENT WIN +{c.margin}</span>}</div>
+              </div>
+              <div className="text-sm opacity-85 mt-0.5">{c.line}</div>
+              <div className="text-xs font-black mt-0.5 tracking-wide" style={{ color: "#ffd75a" }}>{c.hype}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 function HomeHub({ setActive }) {
   const fresh = SCORES_CACHE.data && Date.now() - SCORES_CACHE.ts < 120000;
   const [scores, setScores] = useState(fresh ? SCORES_CACHE.data : null);
@@ -1975,7 +2066,7 @@ function HomeHub({ setActive }) {
       const teamList = HOME_CARDS.map(c => c.name).join(", ");
       const res = await fetch(apiUrl(), {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `For each of these teams: ${teamList}. If the team has a game IN PROGRESS right now, give the current score plus the clock/quarter/period/inning. Otherwise, if their season is active, their most recent final score; otherwise their next scheduled game or the word "offseason". Respond with ONLY a JSON array (no prose, no markdown) of {"team": string, "line": string, "live": boolean} using the exact team names I gave — "live" is true ONLY for a game in progress right now.` }] }),
+        body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 3000, tools: [{ type: "web_search_20260209", name: "web_search" }], messages: [{ role: "user", content: `For each of these teams: ${teamList}. If the team has a game IN PROGRESS right now, give the current score plus the clock/quarter/period/inning. Otherwise, if their season is active, their most recent final score; otherwise their next scheduled game or the word "offseason". Respond with ONLY a JSON array (no prose, no markdown) of {"team": string, "line": string, "live": boolean, "result": "win"|"loss"|"tie"|"in_progress"|"scheduled"|"offseason", "teamScore": number|null, "oppScore": number|null, "opponent": string|null} using the exact team names I gave. "live" is true ONLY for a game in progress right now. "result" describes the same game your "line" summarizes: use "win"/"loss"/"tie" ONLY for a game that has finished, "in_progress" for a live one, "scheduled" for an upcoming game, and "offseason" when there is no game. "teamScore" and "oppScore" are that game's scores as plain numbers from the named team's perspective, or null when there is no game.` }] }),
       });
       const data = await res.json();
       const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
@@ -2004,6 +2095,8 @@ function HomeHub({ setActive }) {
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight" style={{ background: "linear-gradient(120deg,#ffffff,#8ea6ff)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>FANDOM FIVE</h1>
         <div className="text-xs opacity-70">Five fandoms · one command center</div>
       </div>
+
+      <VictoryWatch scores={scores} />
 
       <div className="flex items-center justify-between mb-2">
         <div><div className="text-xs font-black tracking-[0.2em] opacity-60">🔴 LIVE SCOREBOARD</div><div className="text-xs opacity-45">{stamp ? `Updated ${stamp} · ` : ""}{anyLive ? "game on — auto-refreshing every 2 min" : "auto-refresh paused · no live games"}</div></div>
