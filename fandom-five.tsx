@@ -1614,6 +1614,25 @@ const ANALYSTS = {
   dodgers: { name: "Blue", emoji: "🔵", vibe: "A smooth LA broadcast-booth analyst voice — classy, poetic about baseball, casually confident the way back-to-back champs get to be. Loves Ohtani theater and October baseball.", chips: ["Can we three-peat?", "Is this the best lineup ever?", "Who's our October X-factor?"] },
 };
 
+function TeamSchedule({ data, ui }) {
+  if (!data) return null;
+  return (
+    <div style={{ color: ui.text }}>
+      <div className="text-xs font-black tracking-[0.2em] mb-2 mt-4" style={{ color: ui.accentColor }}>📅 {data.title}</div>
+      <div className="rounded-3xl p-3" style={ui.glass}>
+        {data.games.map((g, i) => (
+          <div key={i} className="flex items-center gap-2 py-1.5 text-sm border-b last:border-0" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+            <span className="text-xs font-black opacity-60 shrink-0" style={{ width: 78 }}>{g.date}</span>
+            <span className="font-black flex-1">{g.ha} {g.opp}{g.tag && <span className="ml-1.5 font-black px-1.5 py-0.5 rounded-full align-middle" style={{ fontSize: 9, background: ui.accentColor, color: "#0c1226" }}>{g.tag.toUpperCase()}</span>}</span>
+            <span className="text-xs opacity-55 shrink-0">{g.time}</span>
+          </div>
+        ))}
+      </div>
+      <div className="text-xs opacity-50 mt-1.5 text-center">{data.note}</div>
+    </div>
+  );
+}
+
 function TeamAnalyst({ teamKey, team, ui }) {
   const A = ANALYSTS[teamKey];
   const [open, setOpen] = useState(false);
@@ -1757,6 +1776,7 @@ function TeamPage({ team: p }) {
           ))}
         </div>
       </>)}
+      <TeamSchedule data={SCHEDULES[p.key]} ui={{ glass, accentColor: valColor, text: "#fff" }} />
       <HonorsWall teamKey={p.key} ui={{ glass, accentColor: valColor, text: "#fff" }} />
       <Franchise data={FRANCHISE[p.key]} ui={{ glass, accentColor: valColor, text: "#fff" }} />
       <SeasonPredictor teamKey={p.key} teamName={p.name} ui={{ glass, accentBg, accentColor: valColor, text: "#fff", idleBtn: "rgba(255,255,255,0.12)", idleBorder: "1px solid rgba(255,255,255,0.25)", input: { background: "rgba(255,255,255,0.14)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" } }} />
