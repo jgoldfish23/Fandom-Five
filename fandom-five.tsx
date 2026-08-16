@@ -158,7 +158,7 @@ function sliceAlong(pts, t) {
 }
 
 function PlayField({ play, side, T }) {
-  const [t, setT] = useState(1); const raf = useRef();
+  const [t, setT] = useState(1); const raf = useRef(null);
   const run = () => { cancelAnimationFrame(raf.current); const start = performance.now(), dur = 2200; const step = now => { const p = Math.min(1, (now - start) / dur); setT(p); if (p < 1) raf.current = requestAnimationFrame(step); }; raf.current = requestAnimationFrame(step); };
   useEffect(() => { run(); return () => cancelAnimationFrame(raf.current); }, [play.key]);
   const offense = side === "offense";
@@ -847,7 +847,7 @@ function AskCosmo({ T }) {
   useEffect(() => { scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight); }, [msgs, loading]);
   const scheduleCtx = GAMES.map(g => `${g.home ? "vs" : "at"} ${g.opp} ${fmtDate(g.date)} (all-time BYU ${g.h2h})`).join("; ");
   const system = `You are Cosmo the Cougar, BYU's mascot and the ultimate hype-man for BYU football. Personality: electric, funny, unshakably loyal, bleeds royal blue. Keep replies short and punchy (2-4 sentences), high energy, family-friendly and clean (no profanity). Toss in the occasional "Rise and Shout!" or roar. You know BYU: 1984 national champs, Ty Detmer's 1990 Heisman, LaVell Edwards Stadium, joined the Big 12 in 2023. In 2025 BYU went 12-2 behind true-freshman QB Bear Bachmeier and RB LJ Martin (Big 12 OPOY); OC is Aaron Roderick (power spread), and Kelly Poppinga is the 2026 DC (multiple 4-3). Use the 2026 schedule when relevant. Predictions are just for fun. 2026 schedule: ${scheduleCtx}.`;
-  const send = async (text) => {
+  const send = async (text = null) => {
     const qy = (text ?? input).trim(); if (!qy || loading) return;
     const next = [...msgs, { role: "user", content: qy }]; setMsgs(next); setInput(""); setLoading(true);
     try { const res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ model: "claude-sonnet-5", max_tokens: 2000, system, messages: next.map(m => ({ role: m.role, content: m.content })) }) }); const data = await res.json(); const txt = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n").trim() || "Roar! My voice cracked — hit me again!"; setMsgs(m => [...m, { role: "assistant", content: txt }]); }
@@ -908,7 +908,7 @@ function Recruiting({ T }) {
   const barW = rank => Math.max(8, Math.round((76 - rank) / 75 * 100));
   const posOrder = ["ATH", "CB", "DL", "Edge", "WR", "RB", "OL", "K"];
   const posCount = {}; R.live.board.forEach(c => { posCount[c.pos] = (posCount[c.pos] || 0) + 1; });
-  const posMax = Math.max(1, ...Object.values(posCount));
+  const posMax = Math.max(1, ...Object.values(posCount).map(Number));
   const phases = ["July 2026", "June 2026", "Spring 2026"];
   return (
     <div className="py-2" style={{ color: T.text }}>
@@ -2295,7 +2295,7 @@ function BracketPredictor({ ui, ballot }) {
   const f = [w("s1", s1), w("s2", s2)];
   const champ = w("f", f);
   const pick = (id, team) => setBp(b => ({ ...b, [id]: team }));
-  const Matchup = ({ id, pair, bye }) => (
+  const Matchup = ({ id, pair, bye = null }) => (
     <div className="rounded-2xl p-2 flex flex-col gap-1.5" style={ui.glass}>
       {pair.map((t, i) => {
         const on = t && bp[id] === t && pair.includes(bp[id]);
@@ -2308,7 +2308,7 @@ function BracketPredictor({ ui, ballot }) {
       })}
     </div>
   );
-  const Round = ({ title, sub, children }) => (
+  const Round = ({ title, sub = null, children }) => (
     <div className="mb-3">
       <div className="flex items-baseline gap-2 mb-1.5"><span className="text-xs font-black tracking-widest" style={{ color: ui.green }}>{title}</span>{sub && <span className="text-[10px] opacity-50">{sub}</span>}</div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{children}</div>
