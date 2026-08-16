@@ -15,19 +15,6 @@ const GAMES = [
   { id: "g12", opp: "Cincinnati", home: true, conf: true, date: "2026-11-28T12:00:00-07:00", tv: "TBA", tba: true, prob: 66, story: "Regular season finale at home against the Bearcats. Send the seniors out right and lock in the bowl resume.", hype: 4, h2h: "3–0", h2hNote: "BYU is unbeaten against the Bearcats." },
 ];
 
-const TRIVIA = [
-  { q: "In what year did BYU win its consensus national championship?", a: "1984", opts: ["1980", "1984", "1990", "1996"] },
-  { q: "Which BYU quarterback won the Heisman Trophy in 1990?", a: "Ty Detmer", opts: ["Steve Young", "Jim McMahon", "Ty Detmer", "Robbie Bosco"] },
-  { q: "BYU's home stadium is named after which legendary head coach?", a: "LaVell Edwards", opts: ["LaVell Edwards", "Bronco Mendenhall", "Cosmo", "Brian Santiago"] },
-  { q: "What is BYU's rivalry game against Utah commonly called?", a: "The Holy War", opts: ["The Border War", "The Holy War", "The Beehive Bowl", "The Cougar Clash"] },
-  { q: "Which conference did BYU join in 2023?", a: "Big 12", opts: ["Pac-12", "Big Ten", "SEC", "Big 12"] },
-  { q: "What is the name of BYU's cougar mascot?", a: "Cosmo", opts: ["Sparky", "Cosmo", "Brutus", "Willie"] },
-  { q: "Which Pro Football Hall of Fame QB played at BYU?", a: "Steve Young", opts: ["Joe Montana", "Steve Young", "John Elway", "Dan Marino"] },
-  { q: "In what city is BYU located?", a: "Provo, Utah", opts: ["Salt Lake City", "Ogden", "Provo, Utah", "Orem"] },
-  { q: "BYU's fight song famously begins with which two words?", a: "Rise and Shout", opts: ["Rise and Shout", "Go Cougars", "Roar Up", "Stand and Cheer"] },
-  { q: "From 2011 to 2022, BYU football competed as a what?", a: "Independent", opts: ["WAC member", "Mountain West member", "Independent", "Pac-12 member"] },
-];
-
 const STATS = {
   record: "12–2", conf: "8–1 Big 12", ap: "No. 11", coaches: "No. 12",
   postseason: "Pop-Tarts Bowl champs (25–21 vs Georgia Tech) · Big 12 title game runner-up",
@@ -850,26 +837,6 @@ function HistoryVault({ celebrate, T }) {
         ))}
       </div>
       <div className="text-xs opacity-50 mt-3 text-center">The vault is open. Series and era numbers are approximate where records disagree — history is like that.</div>
-    </div>
-  );
-}
-
-function Trivia({ highScore, setHighScore, celebrate, T }) {
-  const [order, setOrder] = useState(() => [...TRIVIA].sort(() => Math.random() - 0.5));
-  const [idx, setIdx] = useState(0); const [score, setScore] = useState(0); const [picked, setPicked] = useState(null); const [done, setDone] = useState(false);
-  const q = order[idx];
-  const choose = opt => { if (picked) return; setPicked(opt); if (opt === q.a) setScore(s => s + 1); };
-  const next = () => { if (idx + 1 >= order.length) { if (score > highScore) setHighScore(score); if (score >= 8) celebrate("big"); setDone(true); } else { setIdx(i => i + 1); setPicked(null); } };
-  const restart = () => { setOrder([...TRIVIA].sort(() => Math.random() - 0.5)); setIdx(0); setScore(0); setPicked(null); setDone(false); };
-  if (done) return (
-    <div className="py-10 text-center" style={{ color: T.text }}><Label>FINAL SCORE</Label><div className="text-6xl font-black my-2">{score}/{order.length}</div><div className="text-sm opacity-80 mb-1">{score === order.length ? "Perfect! True Cougar." : score >= 7 ? "Strong showing! Rise and Shout." : "Keep studying the Cougar history!"}</div><div className="text-xs opacity-70 mb-6">Best score: {Math.max(highScore, score)}/{order.length}</div><button onClick={restart} className="btn-lift px-6 py-3 rounded-full font-black" style={{ ...T.accent, color: T.accentText }}>PLAY AGAIN</button></div>
-  );
-  return (
-    <div className="py-4" style={{ color: T.text }}>
-      <div className="flex justify-between text-xs font-black opacity-70 mb-3"><span>QUESTION {idx + 1} / {order.length}</span><span>SCORE {score} · BEST {highScore}</span></div>
-      <div className="rounded-3xl p-5 mb-4 text-lg font-black" style={T.glassDeep}>{q.q}</div>
-      <div className="flex flex-col gap-2">{q.opts.map(opt => { let st = { background: T.idleBtn, color: T.text, border: T.idleBorder }; if (picked) { if (opt === q.a) st = { ...T.accent, color: T.accentText }; else if (opt === picked) st = { background: T.oppActive, color: "#fff" }; } return <button key={opt} onClick={() => choose(opt)} className="btn-lift py-3 px-4 rounded-2xl text-left font-bold" style={st}>{opt}{picked && opt === q.a && " ✓"}</button>; })}</div>
-      {picked && <button onClick={next} className="btn-lift mt-4 w-full py-3 rounded-full font-black" style={{ ...T.accent, color: T.accentText }}>{idx + 1 >= order.length ? "SEE RESULTS" : "NEXT →"}</button>}
     </div>
   );
 }
@@ -2642,25 +2609,48 @@ function FootballRoster({ T }) {
   );
 }
 
+const SECTION_IDS = ["countdown", "schedule", "pickem", "dashboard", "simulator", "big12", "stats", "playbook", "roster", "recruiting", "vault", "cosmo"];
+
 function BYUFootballHQ() {
   const retro = useContext(RetroCtx);
   const byuMark = markFor("byufootball", retro);
-  const [tab, setTab] = useState("countdown");
   const [picks, setPicks] = useStorage("byu26_picks", {});
   const [actuals, setActuals] = useStorage("byu26_actuals", {});
-  const [highScore, setHighScore] = useStorage("byu26_trivia_best", 0);
   const [soundOn, setSoundOn] = useStorage("byu26_sound", true);
   const [theme, setTheme] = useStorage("byu26_theme", "night");
+  const [activeSec, setActiveSec] = useState("countdown");
   const confettiRef = useRef(null);
   const T = THEMES[theme] || THEMES.night;
   const celebrate = (kind) => { confettiRef.current?.fire(); playFanfare(kind, soundOn); };
-  const tabs = [
-    { id: "countdown", icon: "⏱", name: "Countdown" }, { id: "schedule", icon: "🏈", name: "Schedule" }, { id: "pickem", icon: "✅", name: "Pick'Em" },
-    { id: "dashboard", icon: "📊", name: "Projections" }, { id: "simulator", icon: "🎲", name: "Simulator" }, { id: "big12", icon: "🏆", name: "Big 12 Race" },
-    { id: "stats", icon: "📈", name: "Stats" }, { id: "playbook", icon: "📋", name: "Playbook" },
-    { id: "roster", icon: "🧬", name: "Roster" }, { id: "recruiting", icon: "🎯", name: "Recruiting" }, { id: "vault", icon: "🏛️", name: "History" },
-    { id: "trivia", icon: "🧠", name: "Trivia" }, { id: "cosmo", icon: "🐾", name: "Cosmo" },
+  // One continuous page — every section is rendered; the rail scrolls between them.
+  const sections = [
+    { id: "countdown", icon: "⏱", name: "Countdown", el: <Countdown T={T} celebrate={celebrate} /> },
+    { id: "schedule", icon: "🏈", name: "Schedule", el: <Schedule T={T} /> },
+    { id: "pickem", icon: "✅", name: "Pick'Em", el: <PickEm picks={picks} setPicks={setPicks} actuals={actuals} setActuals={setActuals} celebrate={celebrate} T={T} /> },
+    { id: "dashboard", icon: "📊", name: "Projections", el: <Dashboard picks={picks} T={T} /> },
+    { id: "simulator", icon: "🎲", name: "Simulator", el: <SeasonSimulator picks={picks} celebrate={celebrate} T={T} /> },
+    { id: "big12", icon: "🏆", name: "Big 12 Race", el: <Big12Race T={T} /> },
+    { id: "stats", icon: "📈", name: "Stats", el: <Analytics picks={picks} T={T} /> },
+    { id: "playbook", icon: "📋", name: "Playbook", el: <Playbook T={T} /> },
+    { id: "roster", icon: "🧬", name: "Roster", el: <FootballRoster T={T} /> },
+    { id: "recruiting", icon: "🎯", name: "Recruiting", el: <Recruiting T={T} /> },
+    { id: "vault", icon: "🏛️", name: "History", el: <HistoryVault celebrate={celebrate} T={T} /> },
+    { id: "cosmo", icon: "🐾", name: "Cosmo", el: <AskCosmo T={T} /> },
   ];
+  const jump = id => { const el = typeof document !== "undefined" && document.getElementById("sec-" + id); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  // Highlight whichever section is currently in view. Degrades to a static
+  // highlight where IntersectionObserver isn't available.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined" || typeof document === "undefined") return;
+    const els = SECTION_IDS.map(id => document.getElementById("sec-" + id)).filter(Boolean);
+    if (!els.length) return;
+    const io = new IntersectionObserver(entries => {
+      const top = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (top) setActiveSec(top.target.id.slice(4));
+    }, { rootMargin: "-15% 0px -75% 0px" });
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
   const toggleBtn = { background: theme === "day" ? "rgba(42,79,224,0.12)" : "rgba(255,255,255,0.7)", border: "1px solid rgba(42,79,224,0.4)", boxShadow: "0 4px 14px rgba(10,20,80,0.2)" };
   return (
     <div className={"min-h-screen w-full relative overflow-hidden theme-" + theme} style={{ fontFamily: "system-ui, sans-serif" }}>
@@ -2714,22 +2704,18 @@ function BYUFootballHQ() {
 
         <div className="flex gap-3">
           <div className="flex flex-col gap-1.5 shrink-0 w-14 sm:w-36" style={{ position: "sticky", top: 56, alignSelf: "flex-start" }}>
-            {tabs.map(t => <button key={t.id} onClick={() => setTab(t.id)} title={t.name} className="tab-btn px-0 sm:px-3 py-2 rounded-xl text-sm sm:text-xs font-black text-center sm:text-left" style={tab === t.id ? { background: "linear-gradient(135deg,#3a63ff,#1a2fb0)", color: "#fff", boxShadow: "0 6px 18px rgba(26,47,176,0.5)" } : { background: theme === "day" ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.6)", color: "#17225e", border: "1px solid rgba(42,79,224,0.35)" }}><span className="sm:mr-1.5">{t.icon}</span><span className="hidden sm:inline">{t.name}</span></button>)}
+            {sections.map(t => <button key={t.id} onClick={() => jump(t.id)} title={"Jump to " + t.name} className="tab-btn px-0 sm:px-3 py-2 rounded-xl text-sm sm:text-xs font-black text-center sm:text-left" style={activeSec === t.id ? { background: "linear-gradient(135deg,#3a63ff,#1a2fb0)", color: "#fff", boxShadow: "0 6px 18px rgba(26,47,176,0.5)" } : { background: theme === "day" ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.6)", color: "#17225e", border: "1px solid rgba(42,79,224,0.35)" }}><span className="sm:mr-1.5">{t.icon}</span><span className="hidden sm:inline">{t.name}</span></button>)}
           </div>
-          <div className="flex-1 min-w-0" key={tab} style={{ animation: "tabin 0.5s cubic-bezier(.2,.7,.2,1)" }}>
-            {tab === "countdown" && <Countdown T={T} celebrate={celebrate} />}
-            {tab === "schedule" && <Schedule T={T} />}
-            {tab === "pickem" && <PickEm picks={picks} setPicks={setPicks} actuals={actuals} setActuals={setActuals} celebrate={celebrate} T={T} />}
-            {tab === "dashboard" && <Dashboard picks={picks} T={T} />}
-            {tab === "simulator" && <SeasonSimulator picks={picks} celebrate={celebrate} T={T} />}
-            {tab === "big12" && <Big12Race T={T} />}
-            {tab === "stats" && <Analytics picks={picks} T={T} />}
-            {tab === "playbook" && <Playbook T={T} />}
-            {tab === "roster" && <FootballRoster T={T} />}
-            {tab === "recruiting" && <Recruiting T={T} />}
-            {tab === "vault" && <HistoryVault celebrate={celebrate} T={T} />}
-            {tab === "trivia" && <Trivia highScore={highScore} setHighScore={setHighScore} celebrate={celebrate} T={T} />}
-            {tab === "cosmo" && <AskCosmo T={T} />}
+          <div className="flex-1 min-w-0">
+            {sections.map((s, i) => (
+              <section key={s.id} id={"sec-" + s.id} style={{ scrollMarginTop: 64 }}>
+                <div className="flex items-center gap-2 pt-5 pb-1" style={{ borderTop: i === 0 ? "none" : "1px solid rgba(42,79,224,0.22)", marginTop: i === 0 ? 0 : 8 }}>
+                  <span className="text-base">{s.icon}</span>
+                  <span className="text-xs font-black tracking-[0.25em]" style={{ color: T.leaderLine }}>{s.name.toUpperCase()}</span>
+                </div>
+                {s.el}
+              </section>
+            ))}
           </div>
         </div>
       </div>
